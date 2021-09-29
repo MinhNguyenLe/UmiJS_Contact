@@ -1,10 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Form, Input, Button, Checkbox } from 'antd';
 
+import request from 'umi-request';
+
+import { history } from 'umi';
+
+import { useVerifyAccount } from '@/models/useVerifyAccoun';
 export default function LoginForm() {
+  const [err, setErr] = useState<string>('Please input your form');
+  const [isRule, setRule] = useState<boolean>(true);
+
   const onFinish = (values: any) => {
-    console.log('Success:', values);
+    request
+      .get('/api/users')
+      .then(function (res) {
+        const account = useVerifyAccount(res.users, values.username);
+        if (account.error) {
+          setRule(true);
+          setErr(account.error);
+        } else history.push('/products');
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
   };
 
   const onFinishFailed = (errorInfo: any) => {
@@ -13,6 +32,10 @@ export default function LoginForm() {
 
   return (
     <Form
+      onChange={() => {
+        setErr('');
+        setRule(false);
+      }}
       name="basic"
       labelCol={{ span: 8 }}
       wrapperCol={{ span: 16 }}
@@ -24,17 +47,27 @@ export default function LoginForm() {
       <Form.Item
         label="Username"
         name="username"
-        rules={[{ required: true, message: 'Please input your username!' }]}
+        rules={[{ required: isRule, message: err }]}
       >
-        <Input />
+        <Input
+          onChange={() => {
+            setErr('');
+            setRule(false);
+          }}
+        />
       </Form.Item>
 
       <Form.Item
         label="Password"
         name="password"
-        rules={[{ required: true, message: 'Please input your password!' }]}
+        rules={[{ required: isRule, message: err }]}
       >
-        <Input.Password />
+        <Input.Password
+          onChange={() => {
+            setErr('');
+            setRule(false);
+          }}
+        />
       </Form.Item>
 
       <Form.Item
